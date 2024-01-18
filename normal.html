@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Нормальное распределение</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Нормальное распределение</h1>
+    </header>
+   
+    <p> Нормальное распределение, также известное как распределение Гаусса, 
+        является одним из самых распространенных видов вероятностных распределений. 
+        Он описывается параметрами среднего значения (μ) и стандартного отклонения (σ).</p>
+
+    <p>    Пример задачи, которую можно решить с помощью этого тренажера: </p>
+        
+    <p>    Рост взрослых мужчин в определенной популяции имеет нормальное распределение 
+        со средним значением 175 см и стандартным отклонением 8 см. Какова вероятность того, 
+        что случайно выбранный мужчина будет иметь рост выше 185 см?</p>
+        
+    <p>    Решение:</p>
+    <p>    Установите значения среднего значения μ=175, стандартного отклонения σ=8, и x=185 в форму.
+        Нажмите кнопку "Сгенерировать".
+        Вероятность успешно будет отображена, указывая вероятность того, что случайно выбранный мужчина будет иметь рост выше 185 см.
+    </p>
+
+
+    <div class="container">
+        <form id="normal-distribution-form">
+            <label for="mean">Среднее значение (μ):</label>
+            <input type="number" id="mean" name="mean" required>
+
+            <label for="stdDev">Стандартное отклонение (σ):</label>
+            <input type="number" id="stdDev" name="stdDev" required>
+
+            <label for="x">Значение (x):</label>
+            <input type="number" id="x" name="x" required>
+
+            <label for="greaterThan">Больше x:</label>
+            <input type="checkbox" id="greaterThan" name="greaterThan" checked>
+
+            <button type="button" onclick="generateNormalDistribution()">Сгенерировать</button>
+        </form>
+        <canvas id="normal-distribution-chart"></canvas>
+        <div id="normal-distribution-output">
+            <h2>Численные значения:</h2>
+            <p id="normal-mean">Среднее значение (μ): </p>
+            <p id="normal-stdDev">Стандартное отклонение (σ): </p>
+            <p id="normal-mode">Мода: </p>
+            <p id="normal-median">Медиана: </p>
+            <p id="probability">Вероятность: </p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            generateNormalDistribution();
+        });
+
+        function generateNormalDistribution() {
+            const meanInput = document.getElementById('mean');
+            const stdDevInput = document.getElementById('stdDev');
+            const xInput = document.getElementById('x');
+            const greaterThanCheckbox = document.getElementById('greaterThan');
+
+            const mean = parseFloat(meanInput.value);
+            const stdDev = parseFloat(stdDevInput.value);
+            const x = parseFloat(xInput.value);
+            const greaterThan = greaterThanCheckbox.checked;
+
+            // Проверка на корректность ввода
+            if (isNaN(mean) || isNaN(stdDev) || isNaN(x)) {
+                alert('Пожалуйста, введите корректные значения.');
+                return;
+            }
+
+            const data = calculateNormalDistribution(mean, stdDev);
+            updateNormalDistributionChart(data);
+            updateNormalDistributionOutput(mean, stdDev, x, greaterThan);
+        }
+
+        function calculateNormalDistribution(mean, stdDev) {
+            const data = [];
+            const step = 0.1;
+            let x = mean - 4 * stdDev;
+            while (x <= mean + 4 * stdDev) {
+                const probability = normalDistributionProbability(x, mean, stdDev);
+                data.push({
+                    x: x.toFixed(2),
+                    y: probability.toFixed(4)
+                });
+                x += step;
+            }
+
+            const outputContainer = document.getElementById('normal-distribution-output');
+            outputContainer.querySelector('#normal-mean').textContent = `Среднее значение (μ): ${mean.toFixed(2)}`;
+            outputContainer.querySelector('#normal-stdDev').textContent = `Стандартное отклонение (σ): ${stdDev.toFixed(2)}`;
+            const mode = mean;
+            outputContainer.querySelector('#normal-mode').textContent = `Мода: ${mode.toFixed(2)}`;
+            const median = mean;
+            outputContainer.querySelector('#normal-median').textContent = `Медиана: ${median.toFixed(2)}`;
+
+            return data;
+        }
+
+        function updateNormalDistributionChart(data) {
+            const ctx = document.getElementById('normal-distribution-chart').getContext('2d');
+            if (window.myNormalDistributionChart) {
+                window.myNormalDistributionChart.destroy();
+            }
+
+            window.myNormalDistributionChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(point => point.x),
+                    datasets: [{
+                        label: 'Плотность вероятности',
+                        data: data,
+                        fill: false,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom'
+                        },
+                        y: {
+                            min: 0
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateNormalDistributionOutput(mean, stdDev, x, greaterThan) {
+            const outputContainer = document.getElementById('normal-distribution-output');
+            const probability = normalDistributionProbability(x, mean, stdDev);
+
+            if (greaterThan) {
+                outputContainer.querySelector('#probability').textContent = `Вероятность P(X > ${x}): ${1 - probability.toFixed(4)}`;
+            } else {
+                outputContainer.querySelector('#probability').textContent = `Вероятность P(X < ${x}): ${probability.toFixed(4)}`;
+            }
+        }
+
+        function normalDistributionProbability(x, mean, stdDev) {
+            const exponent = -0.5 * ((x - mean) / stdDev) ** 2;
+            const coefficient = 1 / (stdDev * Math.sqrt(2 * Math.PI));
+            const probability = coefficient * Math.exp(exponent);
+            return probability;
+        }
+    </script>
+</body>
+</html>

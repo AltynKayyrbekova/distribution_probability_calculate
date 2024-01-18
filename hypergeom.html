@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Гипергеометрическое распределение</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Гипергеометрическое распределение</h1>
+    </header>
+    <p>Гипергеометрическое распределение моделирует вероятность того, что из N элементов с K 
+        успехами и N−K неудачами в случайной выборке из n элементов будет выбрано x успехов.
+        
+        Пример задачи, которую можно решить с помощью этого тренажера:
+        
+        В урне есть 20 мячей, из которых 7 красные и 13 синие. Вы случайным образом выбираете 
+        5 мячей. Какова вероятность того, что среди выбранных мячей ровно 3 красных?
+        
+        Решение:
+        
+        Установите значения 
+        N=20, K=7, n=5 и x=3 в форму.
+        Нажмите кнопку "Сгенерировать".
+        Вероятность успешно будет отображена, а также численные значения среднего и дисперсии для гипергеометрического распределения.
+    </p>
+    
+
+    <div class="container">
+        <form id="hypergeometric-form">
+            <label for="N">Общее количество элементов (N):</label>
+            <input type="number" id="N" name="N" min="1" required>
+
+            <label for="K">Количество успехов в популяции (K):</label>
+            <input type="number" id="K" name="K" min="0" required>
+
+            <label for="n">Размер выборки (n):</label>
+            <input type="number" id="n" name="n" min="0" required>
+
+            <label for="x">Желаемый результат (x):</label>
+            <input type="number" id="x" name="x" min="0" required>
+
+            <button type="button" onclick="generateHypergeometric()">Сгенерировать</button>
+        </form>
+
+        <canvas id="hypergeometric-chart"></canvas>
+
+        <div id="hypergeometric-output">
+            <h2>Численные значения:</h2>
+            <p id="hypergeometric-N">Общее количество элементов (N): </p>
+            <p id="hypergeometric-K">Количество успехов в популяции (K): </p>
+            <p id="hypergeometric-n">Размер выборки (n): </p>
+            <p id="hypergeometric-x">Количество красных мячей (x): </p>
+            <p id="hypergeometric-probability">Вероятность: </p>
+            <p id="hypergeometric-mean">Среднее: </p>
+            <p id="hypergeometric-variance">Дисперсия: </p>
+        </div>
+    </div>
+
+    <script>
+        function generateHypergeometric() {
+            const NInput = document.getElementById('N');
+            const KInput = document.getElementById('K');
+            const nInput = document.getElementById('n');
+            const xInput = document.getElementById('x');
+
+            const N = parseInt(NInput.value);
+            const K = parseInt(KInput.value);
+            const n = parseInt(nInput.value);
+            const x = parseInt(xInput.value);
+
+            // Проверка на корректность ввода
+            if (
+                isNaN(N) || isNaN(K) || isNaN(n) || isNaN(x) ||
+                N < 1 || K < 0 || n < 0 || n > N || x < 0 || x > Math.min(K, n)
+            ) {
+                alert('Пожалуйста, введите корректные значения.');
+                return;
+            }
+
+            const data = calculateHypergeometricDistribution(N, K, n);
+            updateHypergeometricChart(data);
+            updateHypergeometricOutput(N, K, n, x);
+        }
+
+        function calculateHypergeometricDistribution(N, K, n) {
+            const data = [];
+            let mean = (K * n) / N;
+            let variance = (K / N) * ((N - K) / N) * (N - n) / (N - 1);
+
+            for (let x = 0; x <= Math.min(K, n); x++) {
+                const probability = hypergeometricProbability(x, N, K, n);
+                data.push({
+                    x: x,
+                    y: probability
+                });
+            }
+
+            const outputContainer = document.getElementById('hypergeometric-output');
+            outputContainer.querySelector('#hypergeometric-mean').textContent = `Среднее: ${mean.toFixed(2)}`;
+            outputContainer.querySelector('#hypergeometric-variance').textContent = `Дисперсия: ${variance.toFixed(2)}`;
+
+            return data;
+        }
+
+        function updateHypergeometricChart(data) {
+            const ctx = document.getElementById('hypergeometric-chart').getContext('2d');
+            if (window.myHypergeometricChart) {
+                window.myHypergeometricChart.destroy();
+            }
+
+            window.myHypergeometricChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Array.from({ length: data.length }, (_, i) => i.toString()),
+                    datasets: [{
+                        label: 'Вероятность',
+                        data: data,
+                        backgroundColor: 'rgba(230, 126, 34, 0.7)',
+                        borderColor: 'rgba(230, 126, 34, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            max: Math.min(data.length - 1, 10)
+                        },
+                        y: {
+                            min: 0
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateHypergeometricOutput(N, K, n, x) {
+            const outputContainer = document.getElementById('hypergeometric-output');
+            outputContainer.innerHTML = `
+                <h2>Численные значения:</h2>
+                <p id="hypergeometric-N">Общее количество элементов (N): ${N}</p>
+                <p id="hypergeometric-K">Количество успехов в популяции (K): ${K}</p>
+                <p id="hypergeometric-n">Размер выборки (n): ${n}</p>
+                <p id="hypergeometric-x">Количество красных мячей (x): ${x}</p>
+                <p id="hypergeometric-probability">Вероятность: ${hypergeometricProbability(x, N, K, n).toFixed(4)}</p>
+                <p id="hypergeometric-mean">Среднее: ${outputContainer.querySelector('#hypergeometric-mean').textContent}</p>
+                <p id="hypergeometric-variance">Дисперсия: ${outputContainer.querySelector('#hypergeometric-variance').textContent}</p>
+            `;
+        }
+
+        function hypergeometricProbability(x, N, K, n) {
+            return (
+                (choose(K, x) * choose(N - K, n - x)) /
+                choose(N, n)
+            );
+        }
+
+        function choose(n, k) {
+            if (k === 0) {
+                return 1;
+            } else {
+                return (n * choose(n - 1, k - 1)) / k;
+            }
+        }
+    </script>
+</body>
+</html>

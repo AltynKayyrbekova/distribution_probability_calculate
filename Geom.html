@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Геометрическое распределение</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Геометрическое распределение</h1>
+    </header>
+   <p>Геометрическое распределение моделирует количество попыток до первого успеха в серии независимых бинарных испытаний.
+    
+    Пример задачи, которую можно решить с помощью этого тренажера:
+    
+    Какова вероятность того, что первый успех произойдет на второй попытке (x=2), 
+    если вероятность успеха в каждом испытании равна 0.3 (p=0.3)?
+    
+    Решение:
+    Установите значение 
+    p=0.3 и x=2 в форму.
+    Нажмите кнопку "Сгенерировать".
+    Вероятность успешно будет отображена, 
+    а также численные значения среднего и дисперсии для геометрического распределения.</p>
+
+
+    <div class="container">
+        <form id="geometric-form">
+            <label for="p">Вероятность успеха (p):</label>
+            <input type="number" step="0.01" id="p" name="p" min="0" max="1" required>
+
+            <label for="x">Количество попыток до успеха (x):</label>
+            <input type="number" id="x" name="x" required>
+
+            <button type="button" onclick="generateGeometric()">Сгенерировать</button>
+        </form>
+        <canvas id="geometric-chart"></canvas>
+        <div id="geometric-output">
+            <h2>Численные значения:</h2>
+            <p id="geometric-p">Вероятность успеха (p): </p>
+            <p id="geometric-x">Количество попыток до успеха (x): </p>
+            <p id="geometric-probability">Вероятность: </p>
+            <p id="geometric-mean">Среднее: </p>
+            <p id="geometric-variance">Дисперсия: </p>
+        </div>
+    </div>
+
+    <script>
+        function generateGeometric() {
+            const pInput = document.getElementById('p');
+            const xInput = document.getElementById('x');
+
+            const p = parseFloat(pInput.value);
+            const x = parseInt(xInput.value);
+
+            // Проверка на корректность ввода
+            if (
+                isNaN(p) || isNaN(x) ||
+                p < 0 || p > 1 || x < 1
+            ) {
+                alert('Пожалуйста, введите корректные значения.');
+                return;
+            }
+
+            const data = calculateGeometricDistribution(p);
+            updateGeometricChart(data);
+            updateGeometricOutput(p, x);
+        }
+
+        function calculateGeometricDistribution(p) {
+            const data = [];
+            let mean = 1 / p;
+            let variance = (1 - p) / (p * p);
+
+            for (let x = 1; x <= 10; x++) {
+                const probability = geometricProbability(x, p);
+                data.push({
+                    x: x,
+                    y: probability
+                });
+            }
+
+            const outputContainer = document.getElementById('geometric-output');
+            outputContainer.querySelector('#geometric-mean').textContent = `Среднее: ${mean.toFixed(2)}`;
+            outputContainer.querySelector('#geometric-variance').textContent = `Дисперсия: ${variance.toFixed(2)}`;
+
+            return data;
+        }
+
+        function updateGeometricChart(data) {
+            const ctx = document.getElementById('geometric-chart').getContext('2d');
+            if (window.myGeometricChart) {
+                window.myGeometricChart.destroy();
+            }
+
+            window.myGeometricChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Array.from({ length: data.length }, (_, i) => (i + 1).toString()),
+                    datasets: [{
+                        label: 'Вероятность',
+                        data: data,
+                        backgroundColor: 'rgba(46, 204, 113, 0.7)',
+                        borderColor: 'rgba(46, 204, 113, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            max: 10
+                        },
+                        y: {
+                            min: 0
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateGeometricOutput(p, x) {
+            const outputContainer = document.getElementById('geometric-output');
+            outputContainer.innerHTML = `
+                <h2>Численные значения:</h2>
+                <p id="geometric-p">Вероятность успеха (p): ${p.toFixed(2)}</p>
+                <p id="geometric-x">Количество попыток до успеха (x): ${x}</p>
+                <p id="geometric-probability">Вероятность: ${geometricProbability(x, p).toFixed(4)}</p>
+                <p id="geometric-mean">Среднее: ${outputContainer.querySelector('#geometric-mean').textContent}</p>
+                <p id="geometric-variance">Дисперсия: ${outputContainer.querySelector('#geometric-variance').textContent}</p>
+            `;
+        }
+
+        function geometricProbability(x, p) {
+            return Math.pow(1 - p, x - 1) * p;
+        }
+    </script>
+</body>
+</html>

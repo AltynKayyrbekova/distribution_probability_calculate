@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Пуассоновское распределение</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Пуассоновское распределение</h1>
+    </header>
+
+    <p> Пример задачи, которую можно решить с помощью этого тренажера:
+
+        "Предположим, что среднее количество аварий на перекрестке в течение часа составляет 2
+        (λ=2). Какова вероятность того, что произойдет ровно 3 аварии в течение часа?".
+        Чтобы решить эту задачу с использованием тренажера, вам нужно ввести значение параметра
+        λ (интенсивность) и количество событий x (количество аварий) в соответствующие поля и 
+        нажать кнопку "Сгенерировать". Тренажер отобразит график пуассоновского распределения 
+        и численные значения вероятности, среднего и дисперсии. </p>
+   
+ 
+
+    <div class="container">
+        <form id="poisson-form">
+            <label for="lambda">Интенсивность (λ):</label>
+            <input type="number" step="0.01" id="lambda" name="lambda" min="0" required>
+
+            <label for="x">Количество событий (x):</label>
+            <input type="number" id="x" name="x" required>
+
+            <button type="button" onclick="generatePoisson()">Сгенерировать</button>
+        </form>
+
+        <canvas id="poisson-chart"></canvas>
+
+        <div id="poisson-output">
+            <h2>Численные значения:</h2>
+            <p id="poisson-lambda">Интенсивность (λ): </p>
+            <p id="poisson-x">Количество событий (x): </p>
+            <p id="poisson-probability">Вероятность: </p>
+            <p id="poisson-mean">Среднее: </p>
+            <p id="poisson-variance">Дисперсия: </p>
+        </div>
+    </div>
+
+    <script>
+        function generatePoisson() {
+            const lambdaInput = document.getElementById('lambda');
+            const xInput = document.getElementById('x');
+
+            const lambda = parseFloat(lambdaInput.value);
+            const x = parseInt(xInput.value);
+
+            // Проверка на корректность ввода
+            if (
+                isNaN(lambda) || isNaN(x) ||
+                lambda < 0 || x < 0
+            ) {
+                alert('Пожалуйста, введите корректные значения.');
+                return;
+            }
+
+            const data = calculatePoissonDistribution(lambda);
+            updatePoissonChart(data);
+            updatePoissonOutput(lambda, x);
+        }
+
+        function calculatePoissonDistribution(lambda) {
+            const data = [];
+            let mean = lambda;
+            let variance = lambda;
+
+            for (let x = 0; x <= 10 * lambda; x++) {
+                const probability = poissonProbability(x, lambda);
+                data.push({
+                    x: x,
+                    y: probability
+                });
+            }
+
+            const outputContainer = document.getElementById('poisson-output');
+            outputContainer.querySelector('#poisson-mean').textContent = `Среднее: ${mean.toFixed(2)}`;
+            outputContainer.querySelector('#poisson-variance').textContent = `Дисперсия: ${variance.toFixed(2)}`;
+
+            return data;
+        }
+
+        function updatePoissonChart(data) {
+            const ctx = document.getElementById('poisson-chart').getContext('2d');
+            if (window.myPoissonChart) {
+                window.myPoissonChart.destroy();
+            }
+
+            window.myPoissonChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Array.from({ length: data.length }, (_, i) => i.toString()),
+                    datasets: [{
+                        label: 'Вероятность',
+                        data: data,
+                        backgroundColor: 'rgba(155, 89, 182, 0.7)',
+                        borderColor: 'rgba(155, 89, 182, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            max: 10 * data.length
+                        },
+                        y: {
+                            min: 0
+                        }
+                    }
+                }
+            });
+        }
+
+        function updatePoissonOutput(lambda, x) {
+            const outputContainer = document.getElementById('poisson-output');
+            outputContainer.innerHTML = `
+                <h2>Численные значения:</h2>
+                <p id="poisson-lambda">Интенсивность (λ): ${lambda.toFixed(2)}</p>
+                <p id="poisson-x">Количество событий (x): ${x}</p>
+                <p id="poisson-probability">Вероятность: ${poissonProbability(x, lambda).toFixed(4)}</p>
+                <p id="poisson-mean">Среднее: ${outputContainer.querySelector('#poisson-mean').textContent}</p>
+                <p id="poisson-variance">Дисперсия: ${outputContainer.querySelector('#poisson-variance').textContent}</p>
+            `;
+        }
+
+        function poissonProbability(x, lambda) {
+            const expTerm = Math.exp(-lambda);
+            const powTerm = Math.pow(lambda, x);
+            const factTerm = factorial(x);
+            return (expTerm * powTerm) / factTerm;
+        }
+
+        function factorial(n) {
+            if (n === 0 || n === 1) {
+                return 1;
+            } else {
+                return n * factorial(n - 1);
+            }
+        }
+    </script>
+</body>
+</html>

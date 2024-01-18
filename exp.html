@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Экспоненциальное распределение</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Экспоненциальное распределение</h1>
+    </header>
+   <p>Экспоненциальное распределение часто используется для моделирования времени между последовательными событиями, 
+    такими как время между появлением запросов на сервере или временем между отказами в технических системах.</p>
+
+    <p>Пример задачи, которую можно решить с помощью этого тренажера:</p>
+   
+   <p> Время между появлением двух последовательных запросов на сервер имеет экспоненциальное распределение с параметром 
+    интенсивности λ=0.2 (5 запросов в минуту). Какова вероятность того, что следующий запрос поступит через не более чем 3 минуты?
+   </p>    
+   <p> Решение: </p>
+    
+    <p>Установите значение параметра интенсивности λ=0.2 и x=3 в форму.
+    Нажмите кнопку "Сгенерировать".
+    Вероятность успешно будет отображена, указывая вероятность того, что следующий запрос поступит через не более чем 3 минуты.</p>
+   
+
+    <div class="container">
+        <form id="exponential-distribution-form">
+            <label for="lambda">Параметр интенсивности (λ):</label>
+            <input type="number" id="lambda" name="lambda" required>
+
+            <label for="x">Значение (x):</label>
+            <input type="number" id="x" name="x" required>
+
+            <label for="greaterThan">Больше x:</label>
+            <input type="checkbox" id="greaterThan" name="greaterThan" checked>
+
+            <button type="button" onclick="generateExponentialDistribution()">Сгенерировать</button>
+        </form>
+        <canvas id="exponential-distribution-chart"></canvas>
+        <div id="exponential-distribution-output">
+            <h2>Численные значения:</h2>
+            <p id="exponential-lambda">Параметр интенсивности (λ): </p>
+            <p id="mean">Математическое ожидание: </p>
+            <p id="average">Среднее значение: </p>
+            <p id="stdDev">Стандартное отклонение: </p>
+            <p id="mode">Мода: </p>
+            <p id="median">Медиана: </p>
+            <p id="probability">Вероятность: </p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            generateExponentialDistribution();
+        });
+
+        function generateExponentialDistribution() {
+            const lambdaInput = document.getElementById('lambda');
+            const xInput = document.getElementById('x');
+            const greaterThanCheckbox = document.getElementById('greaterThan');
+
+            const lambda = parseFloat(lambdaInput.value);
+            const x = parseFloat(xInput.value);
+            const greaterThan = greaterThanCheckbox.checked;
+
+            // Проверка на корректность ввода
+            if (isNaN(lambda) || isNaN(x) || lambda <= 0) {
+                alert('Пожалуйста, введите корректные значения.');
+                return;
+            }
+
+            const data = calculateExponentialDistribution(lambda);
+            updateExponentialDistributionChart(data);
+            updateExponentialDistributionOutput(lambda, x, greaterThan);
+        }
+
+        function calculateExponentialDistribution(lambda) {
+            const data = [];
+            const step = 0.1;
+            let x = 0;
+            while (x <= 5 / lambda) {
+                const probability = exponentialDistributionProbability(x, lambda);
+                data.push({
+                    x: x.toFixed(2),
+                    y: probability.toFixed(4)
+                });
+                x += step;
+            }
+
+            const outputContainer = document.getElementById('exponential-distribution-output');
+            outputContainer.querySelector('#exponential-lambda').textContent = `Параметр интенсивности (λ): ${lambda.toFixed(2)}`;
+
+            return data;
+        }
+
+        function updateExponentialDistributionChart(data) {
+            const ctx = document.getElementById('exponential-distribution-chart').getContext('2d');
+            if (window.myExponentialDistributionChart) {
+                window.myExponentialDistributionChart.destroy();
+            }
+
+            window.myExponentialDistributionChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(point => point.x),
+                    datasets: [{
+                        label: 'Плотность вероятности',
+                        data: data,
+                        fill: false,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom'
+                        },
+                        y: {
+                            min: 0
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateExponentialDistributionOutput(lambda, x, greaterThan) {
+            const outputContainer = document.getElementById('exponential-distribution-output');
+            const probability = exponentialDistributionProbability(x, lambda);
+
+            if (greaterThan) {
+                outputContainer.querySelector('#probability').textContent = `Вероятность P(X > ${x}): ${1 - probability.toFixed(4)}`;
+            } else {
+                outputContainer.querySelector('#probability').textContent = `Вероятность P(X < ${x}): ${probability.toFixed(4)}`;
+            }
+
+            const mean = 1 / lambda;
+            outputContainer.querySelector('#mean').textContent = `Математическое ожидание: ${mean.toFixed(2)}`;
+
+            const average = mean;
+            outputContainer.querySelector('#average').textContent = `Среднее значение: ${average.toFixed(2)}`;
+
+            const stdDev = 1 / lambda;
+            outputContainer.querySelector('#stdDev').textContent = `Стандартное отклонение: ${stdDev.toFixed(2)}`;
+
+            const mode = 0;
+            outputContainer.querySelector('#mode').textContent = `Мода: ${mode}`;
+
+            const median = Math.log(2) / lambda;
+            outputContainer.querySelector('#median').textContent = `Медиана: ${median.toFixed(2)}`;
+        }
+
+        function exponentialDistributionProbability(x, lambda) {
+            if (x < 0) {
+                return 0;
+            }
+
+            const probability = lambda * Math.exp(-lambda * x);
+            return probability;
+        }
+    </script>
+</body>
+</html>

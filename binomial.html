@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Биноминальное распределение</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Биноминальное распределение</h1>
+    </header>
+   
+    <p> Пример задачи, которую можно решить с его помощью:
+
+        "Предположим, у нас есть монета, которая выпадает орлом с вероятностью успеха 0.5
+        (p=0.5). Мы выполняем 10 подбрасываний монеты (n=10). Какова вероятность получить ровно 7 орлов?".
+        Чтобы решить эту задачу с использованием тренажера, вам нужно ввести значения параметров n, p, и 
+        x (количество испытаний, вероятность успеха, количество успехов) в соответствующие поля и нажать 
+        кнопку "Сгенерировать". Тренажер отобразит график биномиального распределения и численные значения 
+        вероятности, среднего и дисперсии.
+    </p>
+   
+
+    <div class="container">
+        <form id="binomial-form">
+            <label for="n">Количество испытаний (n):</label>
+            <input type="number" id="n" name="n" required>
+
+            <label for="p">Вероятность успеха (p):</label>
+            <input type="number" step="0.01" id="p" name="p" min="0" max="1" required>
+
+            <label for="x">Количество успехов (x):</label>
+            <input type="number" id="x" name="x" required>
+
+            <button type="button" onclick="generateBinomial()">Сгенерировать</button>
+        </form>
+        <canvas id="binomial-chart"></canvas>
+        <div id="output">
+            <h2>Численные значения:</h2>
+            <p id="output-n">Количество испытаний (n): </p>
+            <p id="output-p">Вероятность успеха (p): </p>
+            <p id="output-x">Количество успехов (x): </p>
+            <p id="output-probability">Вероятность: </p>
+            <p id="output-mean">Среднее: </p>
+            <p id="output-variance">Дисперсия: </p>
+        </div>
+    </div>
+
+    <script>
+        function generateBinomial() {
+            const nInput = document.getElementById('n');
+            const pInput = document.getElementById('p');
+            const xInput = document.getElementById('x');
+
+            const n = parseInt(nInput.value);
+            const p = parseFloat(pInput.value);
+            const x = parseInt(xInput.value);
+
+            // Проверка на корректность ввода
+            if (
+                isNaN(n) || isNaN(p) || isNaN(x) ||
+                n <= 0 || p < 0 || p > 1 || x < 0 || x > n
+            ) {
+                alert('Пожалуйста, введите корректные значения.');
+                return;
+            }
+
+            const data = calculateBinomialDistribution(n, p);
+            updateChart(data, n);
+            updateOutput(n, p, x);
+        }
+
+        function calculateBinomialDistribution(n, p) {
+            const data = [];
+            let mean = 0;
+            let variance = 0;
+
+            for (let i = 0; i <= n; i++) {
+                const probability = binomialProbability(i, n, p);
+                data.push({
+                    x: i,
+                    y: probability
+                });
+
+                mean += i * probability;
+                variance += i * i * probability;
+            }
+
+            variance -= mean * mean;
+
+            const outputContainer = document.getElementById('output');
+            outputContainer.querySelector('#output-mean').textContent = `Среднее: ${mean.toFixed(2)}`;
+            outputContainer.querySelector('#output-variance').textContent = `Дисперсия: ${variance.toFixed(2)}`;
+
+            return data;
+        }
+
+        function updateChart(data, n) {
+            const ctx = document.getElementById('binomial-chart').getContext('2d');
+            if (window.myBinomialChart) {
+                window.myBinomialChart.destroy();
+            }
+
+            const chartType = (n > 100) ? 'line' : 'bar';
+
+            window.myBinomialChart = new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: Array.from({ length: data.length }, (_, i) => i.toString()),
+                    datasets: [{
+                        label: 'Вероятность',
+                        data: data,
+                        backgroundColor: (chartType === 'bar') ? 'rgba(52, 152, 219, 0.7)' : 'transparent',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom',
+                            max: n
+                        },
+                        y: {
+                            min: 0,
+                            max: 1
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateOutput(n, p, x) {
+            const outputContainer = document.getElementById('output');
+            outputContainer.innerHTML = `
+                <h2>Численные значения:</h2>
+                <p id="output-n">Количество испытаний (n): ${n}</p>
+                <p id="output-p">Вероятность успеха (p): ${p.toFixed(2)}</p>
+                <p id="output-x">Количество успехов (x): ${x}</p>
+                <p id="output-probability">Вероятность: ${binomialProbability(x, n, p).toFixed(4)}</p>
+                <p id="output-mean">Среднее: ${outputContainer.querySelector('#output-mean').textContent}</p>
+                <p id="output-variance">Дисперсия: ${outputContainer.querySelector('#output-variance').textContent}</p>
+            `;
+        }
+
+        function binomialProbability(x, n, p) {
+            const q = 1 - p;
+            let result = factorial(n) / (factorial(x) * factorial(n - x));
+            return result * (p ** x) * (q ** (n - x));
+        }
+
+        function factorial(n) {
+            if (n === 0 || n === 1) {
+                return 1;
+            } else {
+                return n * factorial(n - 1);
+            }
+        }
+    </script>
+</body>
+</html>

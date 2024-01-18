@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Бета-распределение</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Бета-распределение</h1>
+    </header>
+
+    <p>Бета-распределение широко используется в статистике и теории вероятностей, описывая случайные величины, 
+        ограниченные интервалом от 0 до 1.</p>
+
+    <p>Пример задачи, которую можно решить с помощью этого тренажера:</p>
+        
+    <p>Пусть случайная величина X имеет бета-распределение с параметрами α=2 и β=5. Какова вероятность того, что X больше 0.7?</p>
+        
+    <p>Решение:</p>
+    <p> Установите значения параметров α=2 и β=5 в форму.
+        Установите значение x=0.7 в форму.
+        Нажмите кнопку "Сгенерировать".
+        Вероятность успешно будет отображена, указывая вероятность того, что 
+        X больше 0.7.
+    </p>
+   
+
+
+    <div class="container">
+        <form id="beta-distribution-form">
+            <label for="alpha">Параметр α:</label>
+            <input type="number" id="alpha" name="alpha" required>
+
+            <label for="beta">Параметр β:</label>
+            <input type="number" id="beta" name="beta" required>
+
+            <label for="x">Значение (x):</label>
+            <input type="number" step="0.01" id="x" name="x" required>
+
+            <label for="greaterThan">Больше x:</label>
+            <input type="checkbox" id="greaterThan" name="greaterThan" checked>
+
+            <button type="button" onclick="generateBetaDistribution()">Сгенерировать</button>
+        </form>
+        <canvas id="beta-distribution-chart"></canvas>
+        <div id="beta-distribution-output">
+            <h2>Численные значения:</h2>
+            <p id="beta-alpha">Параметр α: </p>
+            <p id="beta-beta">Параметр β: </p>
+            <p id="beta-mean">Среднее: </p>
+            <p id="beta-variance">Дисперсия: </p>
+            <p id="beta-mode">Мода: </p>
+            <p id="beta-median">Медиана: </p>
+            <p id="probability">Вероятность: </p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            generateBetaDistribution();
+        });
+
+        function generateBetaDistribution() {
+            const alphaInput = document.getElementById('alpha');
+            const betaInput = document.getElementById('beta');
+            const xInput = document.getElementById('x');
+            const greaterThanCheckbox = document.getElementById('greaterThan');
+
+            const alpha = parseFloat(alphaInput.value);
+            const beta = parseFloat(betaInput.value);
+            const x = parseFloat(xInput.value);
+            const greaterThan = greaterThanCheckbox.checked;
+
+            // Проверка на корректность ввода
+            if (isNaN(alpha) || isNaN(beta) || isNaN(x) || alpha <= 0 || beta <= 0) {
+                alert('Пожалуйста, введите корректные значения.');
+                return;
+            }
+
+            const data = calculateBetaDistribution(alpha, beta);
+            updateBetaDistributionChart(data);
+            updateBetaDistributionOutput(alpha, beta, x, greaterThan);
+        }
+
+        function calculateBetaDistribution(alpha, beta) {
+            const data = [];
+            const step = 0.01;
+            let x = 0;
+            while (x <= 1) {
+                const probability = betaDistributionProbability(x, alpha, beta);
+                data.push({
+                    x: x.toFixed(2),
+                    y: probability.toFixed(4)
+                });
+                x += step;
+            }
+
+            const outputContainer = document.getElementById('beta-distribution-output');
+            outputContainer.querySelector('#beta-alpha').textContent = `Параметр α: ${alpha.toFixed(2)}`;
+            outputContainer.querySelector('#beta-beta').textContent = `Параметр β: ${beta.toFixed(2)}`;
+            outputContainer.querySelector('#beta-mean').textContent = `Среднее: ${alpha / (alpha + beta)}`;
+            outputContainer.querySelector('#beta-variance').textContent = `Дисперсия: ${(alpha * beta) / ((alpha + beta) ** 2 * (alpha + beta + 1))}`;
+            const mode = (alpha - 1) / (alpha + beta - 2);
+            outputContainer.querySelector('#beta-mode').textContent = `Мода: ${mode.toFixed(2)}`;
+            const median = 1 - 2 ** (-alpha / beta);
+            outputContainer.querySelector('#beta-median').textContent = `Медиана: ${median.toFixed(2)}`;
+
+            return data;
+        }
+
+        function updateBetaDistributionChart(data) {
+            const ctx = document.getElementById('beta-distribution-chart').getContext('2d');
+            if (window.myBetaDistributionChart) {
+                window.myBetaDistributionChart.destroy();
+            }
+
+            window.myBetaDistributionChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(point => point.x),
+                    datasets: [{
+                        label: 'Плотность вероятности',
+                        data: data,
+                        fill: false,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'bottom'
+                        },
+                        y: {
+                            min: 0
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateBetaDistributionOutput(alpha, beta, x, greaterThan) {
+            const outputContainer = document.getElementById('beta-distribution-output');
+            const probability = betaDistributionProbability(x, alpha, beta);
+
+            if (greaterThan) {
+                outputContainer.querySelector('#probability').textContent = `Вероятность P(X > ${x}): ${1 - probability.toFixed(4)}`;
+            } else {
+                outputContainer.querySelector('#probability').textContent = `Вероятность P(X < ${x}): ${probability.toFixed(4)}`;
+            }
+        }
+
+        function betaDistributionProbability(x, alpha, beta) {
+            if (x < 0 || x > 1) {
+                return 0;
+            }
+
+            const betaFunction = betaFn(alpha, beta);
+            const probability = (1 / betaFunction) * (x ** (alpha - 1)) * ((1 - x) ** (beta - 1));
+            return probability;
+        }
+
+        function betaFn(a, b) {
+            return gamma(a) * gamma(b) / gamma(a + b);
+        }
+
+        function gamma(n) {
+            if (n === 1) {
+                return 1;
+            } else if (n === 0.5) {
+                return Math.sqrt(Math.PI);
+            } else {
+                return (n - 1) * gamma(n - 1);
+            }
+        }
+    </script>
+</body>
+</html>
